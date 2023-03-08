@@ -18,6 +18,8 @@ import HeartModel from "./Heart";
 
 const pointsCount = 1000;
 let positions = Float32Array.from({ length: pointsCount * 3 }, () => 1);
+let i = 0;
+let sampler = null;
 export default function Experience() {
   const pointsRef = useRef();
   // const modelRef = createRef();
@@ -51,20 +53,25 @@ export default function Experience() {
   //   // positions = new Float32Array(vertices, 3);
   //   // console.log(positions)
   // }, [ref.current]);
-  const sampler = useMemo(
-    () => new MeshSurfaceSampler(ref.current).build(),
-    [ref.current]
-  );
-  let i = 0;
+
+  // sampler.sample(tempPosition);
+  useEffect(() => {
+    sampler = new MeshSurfaceSampler(ref.current).build();
+   
+  }, []);
+
   useFrame(() => {
     i += 1;
-    sampler.sample(tempPosition);
-    positions[i * 3] = tempPosition.x;
-    positions[i * 3 + 1] = tempPosition.y;
-    positions[i * 3 + 2] = tempPosition.z;
-
-    // console.log(positions.length)
+    if (sampler) {
+      
+      sampler.sample(tempPosition);
+      positions[i * 3] = tempPosition.x;
+      positions[i * 3 + 1] = tempPosition.y;
+      positions[i * 3 + 2] = tempPosition.z;
+    }
+   
   });
+  console.log(pointsRef)
   return (
     <>
       {/* <OrbitControls makeDefault /> */}
@@ -84,12 +91,12 @@ export default function Experience() {
         </bufferGeometry>
         <pointsMaterial
           color="red"
-          size={0.1}
+          size={1}
           alphaTest={0.2}
-          map={new THREE.TextureLoader().load(
-            "https://assets.codepen.io/127738/dotTexture.png"
-          )}
-          vertexColors={"true"}
+          // map={new THREE.TextureLoader().load(
+          //   "https://assets.codepen.io/127738/dotTexture.png"
+          // )}
+          // vertexColors={"true"}
         />
       </points>
       <HeartModel ref={ref} scale={1} />
