@@ -8,70 +8,88 @@ import {
   TransformControls,
   OrbitControls,
 } from "@react-three/drei";
-import { useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
+import { Line } from "@react-three/drei";
 
 import { MeshSurfaceSampler } from "three/examples/jsm/math/MeshSurfaceSampler";
 import * as THREE from "three";
 
 import HeartModel from "./Heart";
 
-const pointsCount = 1000;
+const pointsCount = 10000;
 let positions = Float32Array.from({ length: pointsCount * 3 }, () => 1);
-let i = 0;
+
 let sampler = null;
 export default function Experience() {
   const pointsRef = useRef();
+  const lineRef = useRef();
   // const modelRef = createRef();
 
   const ref = useRef(null);
+  // console.log(ref)
 
-  const vertices = [];
-  const tempPosition = new THREE.Vector3();
-  //? produces a ball ?
-  //   const positionMemo = useMemo(() => {
-
-  //     if (ref.current) {
-  //       for (let i = 0; i < pointsCount; i++) {
-  //         const sampler = new MeshSurfaceSampler(ref.current).build();
-  //         sampler.sample(tempPosition);
-
-  //         vertices.push(tempPosition.x, tempPosition.y, tempPosition.z);
-  //       }
-  //     }
-  //     return new Float32Array(vertices, 3);
-  //   }, [ref.current]);
-  // console.log(positionMemo)
-  // console.log(positionMemo)
-  // useEffect(() => {
-  //   for (let i = 0; i < pointsCount; i++) {
-  //     ;
-
-  //     // vertices.push(tempPosition.x, tempPosition.y, tempPosition.z);
-  //   }
-  //   // positions = new THREE.Float32BufferAttribute(vertices, 3);
-  //   // positions = new Float32Array(vertices, 3);
-  //   // console.log(positions)
-  // }, [ref.current]);
-
-  // sampler.sample(tempPosition);
+  let tempPosition = new THREE.Vector3();
+  let previousTempPosition = new THREE.Vector3();
   useEffect(() => {
     sampler = new MeshSurfaceSampler(ref.current).build();
-   
+    // console.log(lineRef.current);
+    sampler.sample(previousTempPosition);
+    // console.log("useEffect runs on CPU too!!!")
+    //! useful!
+    // for (let i = 0; i < 3000; i++) {
+    //   sampler.sample(tempPosition);
+    //   pointsRef.current.geometry.attributes.position.array[i * 3] =
+    //     tempPosition.x;
+    //   pointsRef.current.geometry.attributes.position.array[i * 3 + 1] =
+    //     tempPosition.y;
+    //   pointsRef.current.geometry.attributes.position.array[i * 3 + 2] =
+    //     tempPosition.z;
+    // }
+
+    // pointsRef.current.geometry.attributes.position.needsUpdate = true;
   }, []);
 
+  let index = 0;
   useFrame(() => {
-    i += 1;
-    if (sampler) {
-      
+    // sampler.sample(previousTempPosition);
+    // console.log("useframe runs on CPU");
+    index++;
+    //! useful!
+    // pointsRef.current.geometry.drawRange.count = index;
+    // if (index < 3000 && sampler) {
+    //   sampler.sample(previousTempPosition);
+    //   sampler.sample(tempPosition);
+
+    //   pointsRef.current.geometry.attributes.position.array[index * 3] =
+    //     tempPosition.x;
+    //   pointsRef.current.geometry.attributes.position.array[index * 3 + 1] =
+    //     tempPosition.y;
+    //   pointsRef.current.geometry.attributes.position.array[index * 3 + 2] =
+    //     tempPosition.z;
+    // }
+    // vertices.push(tempPosition)
+    // pointsRef.current.geometry.attributes.position.needsUpdate = true;
+    let pointFound = false;
+    while (!pointFound) {
       sampler.sample(tempPosition);
-      positions[i * 3] = tempPosition.x;
-      positions[i * 3 + 1] = tempPosition.y;
-      positions[i * 3 + 2] = tempPosition.z;
+      if (tempPosition.distanceTo(previousTempPosition) < 1) {
+        lineRef.current.geometry.attributes.position.array[index * 3] =
+          tempPosition.x;
+        lineRef.current.geometry.attributes.position.array[index * 3 + 1] =
+          tempPosition.y;
+        lineRef.current.geometry.attributes.position.array[index * 3 + 2] =
+          tempPosition.z;
+        // lineRef.current.geometry.attributes.position.needsUpdate = true;
+        previousTempPosition = tempPosition.clone();
+        pointFound = true;
+      }
     }
-   
+    lineRef.current.geometry.attributes.position.needsUpdate = true;
   });
-  console.log(pointsRef)
+
+  //! ref.current must trigger a setter function
+
   return (
     <>
       {/* <OrbitControls makeDefault /> */}
@@ -80,7 +98,25 @@ export default function Experience() {
         <planeGeometry />
         <meshStandardMaterial color="greenyellow" />
       </mesh>
-      <points ref={pointsRef}>
+      <line ref={lineRef}>
+        <bufferGeometry attach="geometry">
+          <bufferAttribute
+            attach={"attributes-position"}
+            count={pointsCount}
+            itemSize={3}
+            array={positions}
+          />
+        </bufferGeometry>
+        <lineBasicMaterial
+          attach="material"
+          color={"#9c88ff"}
+          linewidth={10}
+          linecap={"round"}
+          linejoin={"round"}
+          blending={THREE.AdditiveBlending}
+        />
+      </line>
+      {/* <points ref={pointsRef}>
         <bufferGeometry>
           <bufferAttribute
             attach={"attributes-position"}
@@ -91,14 +127,14 @@ export default function Experience() {
         </bufferGeometry>
         <pointsMaterial
           color="red"
-          size={1}
+          size={0.5}
           alphaTest={0.2}
-          // map={new THREE.TextureLoader().load(
-          //   "https://assets.codepen.io/127738/dotTexture.png"
-          // )}
-          // vertexColors={"true"}
+          map={new THREE.TextureLoader().load(
+            "https://assets.codepen.io/127738/dotTexture.png"
+          )}
+          vertexColors={"true"}
         />
-      </points>
+      </points> */}
       <HeartModel ref={ref} scale={1} />
     </>
   );

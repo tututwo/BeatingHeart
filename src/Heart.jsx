@@ -23,6 +23,7 @@ const HeartModel = forwardRef((props, ref) => {
           ref={ref}
           geometry={nodes.human_heart1.geometry}
           material={meshBasicMaterial}
+          visible={false}
         />
       </group>
     </group>
